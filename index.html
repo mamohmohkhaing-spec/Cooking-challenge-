@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cooking Drag & Drop Game</title>
+<link rel="icon" type="image/png" href="logo.png">
+
+
+
+<style>
+  body {
+    margin: 0;
+    background: #f8c8dc;
+    font-family: "Poppins", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  #game {
+    width: 900px;
+    height: 600px;
+    background: #ffe6f0;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    padding: 15px;
+    box-sizing: border-box;
+  }
+
+  /* TOP BAR */
+  #top-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+
+  #task-box {
+    background: #ff9ecb;
+    padding: 12px 20px;
+    border-radius: 15px;
+    font-weight: bold;
+    color: white;
+    transition: background 0.3s;
+  }
+
+  #timer {
+    background: #ff6fae;
+    padding: 12px 20px;
+    border-radius: 15px;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* KITCHEN AREA */
+  #kitchen {
+    position: relative;
+    height: 350px;
+    background: linear-gradient(#ffd1e8, #ffc0dc);
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+
+  /* TABLE */
+  #table {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 120px;
+    background: #ff9ecb;
+    border-radius: 0 0 20px 20px;
+  }
+
+  /* PAN (DROP ZONE) */
+  #pan {
+    width: 180px;
+    height: 110px;
+    background: #444;
+    border-radius: 0 0 90px 90px;
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid #222;
+    overflow: hidden;
+  }
+
+  #pan::before {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 20px;
+    background: #333;
+    top: -15px;
+    left: 30px;
+    border-radius: 20px;
+  }
+
+  /* Meal fill inside pan */
+  #meal-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(#ffb347, #ffebcd); /* cooked food colors */
+    border-radius: 0 0 90px 90px;
+    transition: height 0.5s;
+  }
+
+  /* INGREDIENTS */
+  #ingredients {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+  }
+
+  .ingredient {
+    width: 80px;
+    height: 80px;
+    border-radius: 15px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: white;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+  <div id="top-bar">
+    <div id="task-box">Step 1: Add Mushroom 🍄</div>
+    <div id="timer">Time: 30</div>
+  </div>
+
+  <div id="kitchen">
+    <div id="pan">
+      <div id="meal-fill"></div>
+    </div>
+    <div id="table"></div>
+  </div>
+
+  <div id="ingredients">
+    <div class="ingredient" draggable="true" id="mushroom">🍄</div>
+    <div class="ingredient" draggable="true" id="tomato">🍅</div>
+    <div class="ingredient" draggable="true" id="onion">🧅</div>
+  </div>
+
+</div>
+
+<script>
+  const recipe = ["mushroom", "tomato", "onion"];
+  let step = 0;
+  let timeLeft = 30;
+  let timer;
+
+  const taskBox = document.getElementById("task-box");
+  const timerDisplay = document.getElementById("timer");
+  const mealFill = document.getElementById("meal-fill");
+  const ingredients = document.querySelectorAll(".ingredient");
+
+  // Drag start
+  ingredients.forEach(item => {
+    item.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("id", e.target.id);
+    });
+  });
+
+  // Allow drop
+  const pan = document.getElementById("pan");
+  pan.addEventListener("dragover", e => e.preventDefault());
+
+  // Drop logic
+  pan.addEventListener("drop", e => {
+    const id = e.dataTransfer.getData("id");
+    checkIngredient(id);
+  });
+
+  function checkIngredient(id) {
+    if (id === recipe[step]) {
+      const ingredientEl = document.getElementById(id);
+      ingredientEl.style.visibility = "hidden";
+      ingredientEl.draggable = false;
+
+      // Fill the pan gradually
+      const fillPercentage = ((step + 1) / recipe.length) * 100;
+      mealFill.style.height = fillPercentage + "%";
+
+      step++;
+      updateTask();
+
+      if (step === recipe.length) {
+        clearInterval(timer);
+        taskBox.innerText = "🎉 Dish completed! The pot is full!";
+
+        
+        setTimeout(() => {
+          window.location.href = "secondlevel.html"; 
+        }, 1000);
+      }
+    } else {
+      showMessage("❌ Wrong ingredient!");
+    }
+  }
+
+  function updateTask() {
+    if (step < recipe.length) {
+      taskBox.innerText = "Step " + (step + 1) + ": Add " + capitalize(recipe[step]);
+    }
+  }
+
+  function startTimer() {
+    timer = setInterval(() => {
+      timeLeft--;
+      timerDisplay.innerText = "Time: " + timeLeft;
+
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        showMessage("⏰ Time’s up!");
+        setTimeout(() => location.reload(), 1500);
+      }
+    }, 1000);
+  }
+
+  function capitalize(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+
+  function showMessage(text) {
+    taskBox.innerText = text;
+    taskBox.style.background = "#ff4c4c";
+    setTimeout(() => {
+      taskBox.style.background = "#ff9ecb";
+      updateTask();
+    }, 1000);
+  }
+
+  startTimer();
+</script>
+
+</body>
+</html>
